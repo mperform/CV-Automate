@@ -1,0 +1,7 @@
+*.tex
+*.txt
+full_experiences.md
+*.aux
+*.log
+*.out
+*.pdf
