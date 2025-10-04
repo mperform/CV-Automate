@@ -164,6 +164,7 @@ Your task is to generate a .tex file that:
 - Selects and tailors only the most relevant experiences from the experiences file according to the job description.
 - For each Work or Research Experience, output exactly 3 concise bullet points summarizing the most impactful, job-relevant accomplishments.
 - For each Project Experience, output exactly 2 concise bullet points.
+- Be aware to put vspace where needed so that bullet points don't overlap each other. But also don't over do it to make the resume look really spread out.
 - The final content must fit on a single one-page PDF (avoid redundancy, trim wordiness, prioritize relevance).
 - Keep technical detail and metrics where relevant (impact, improvements, performance gains).
 - Do not invent experiences or skills not present in the input files, but you may rephrase and condense.
