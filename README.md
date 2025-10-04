@@ -23,8 +23,13 @@ CV-Automate is a powerful tool that uses Google's Gemini AI to transform your co
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Python 3.7+
+### Option 1: Use the Web App (Easiest)
+Visit the live demo: [cv-automate.vercel.app](https://cv-automate.vercel.app)
+
+### Option 2: Run Locally
+
+#### Prerequisites
+- Python 3.7+ (for CLI version)
 - LaTeX (MacTeX, TeX Live, or MiKTeX)
 - Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
@@ -206,6 +211,47 @@ Modify the `system_prompt` in `main.py` to change:
 2. Review error messages in the terminal output
 3. Check generated `.log` files for LaTeX errors
 4. Verify your API key at [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+## 📁 Repository Setup for GitHub
+
+### What to Push
+Push these files to GitHub:
+- All source code (Python, TypeScript, React components)
+- Configuration files (`package.json`, `requirements.txt`, `vercel.json`, etc.)
+- Documentation (`README.md`, `install.md`)
+- Setup scripts (`setup.sh`, `setup.bat`)
+- Template files (`base_resume.tex`, `*_template.*`)
+
+### What's Ignored (in .gitignore)
+- Personal files (`job_description.txt`, `full_experiences.md`)
+- Generated outputs (`*.pdf`, `*.tex`, `*.aux`, `*.log`)
+- Environment variables (`.env*`)
+- Dependencies (`node_modules/`, Python cache)
+- Build artifacts (`.next/`, `build/`)
+- IDE files (`.vscode/`, `.idea/`)
+
+### First-Time Setup
+1. **Initialize Git** (if not already done):
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit: CV-Automate web app"
+   ```
+
+2. **Create GitHub Repository**:
+   - Go to GitHub and create a new repository
+   - Don't initialize with README (you already have one)
+
+3. **Push to GitHub**:
+   ```bash
+   git remote add origin https://github.com/yourusername/cv-automate.git
+   git branch -M main
+   git push -u origin main
+   ```
+
+4. **Set up Vercel Integration** (optional):
+   - Connect your GitHub repo to Vercel for automatic deployments
+   - Add `GEMINI_API_KEY` as environment variable in Vercel dashboard
 
 ## 🤝 Contributing
 
