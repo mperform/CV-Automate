@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { Upload, FileText, Briefcase, Loader2 } from 'lucide-react'
 
 interface ResumeFormProps {
-  onResumeGenerated: (texContent: string, pdfBuffer: ArrayBuffer) => void
+  onResumeGenerated: (explanation: string, texContent: string, pdfBuffer: ArrayBuffer) => void
   isGenerating: boolean
   setIsGenerating: (value: boolean) => void
 }
@@ -81,7 +81,7 @@ export default function ResumeForm({ onResumeGenerated, isGenerating, setIsGener
       }
 
       const result = await response.json()
-      onResumeGenerated(result.texContent, result.pdfBuffer)
+      onResumeGenerated(result.explanation, result.texContent, result.pdfBuffer)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

@@ -7,13 +7,14 @@ import GeneratedResume from '@/components/GeneratedResume'
 
 export default function Home() {
   const [generatedResume, setGeneratedResume] = useState<{
+    explanation: string
     texContent: string
     pdfBuffer: ArrayBuffer
   } | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleResumeGenerated = (texContent: string, pdfBuffer: ArrayBuffer) => {
-    setGeneratedResume({ texContent, pdfBuffer })
+  const handleResumeGenerated = (explanation: string, texContent: string, pdfBuffer: ArrayBuffer) => {
+    setGeneratedResume({ explanation, texContent, pdfBuffer })
   }
 
   const handleReset = () => {
@@ -74,6 +75,7 @@ export default function Home() {
         />
       ) : (
         <GeneratedResume 
+          explanation={generatedResume.explanation}
           texContent={generatedResume.texContent}
           pdfBuffer={generatedResume.pdfBuffer}
           onReset={handleReset}

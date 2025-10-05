@@ -171,8 +171,20 @@ Your task is to generate a .tex file that:
 - Maintain consistent tense, formatting, and LaTeX syntax so that the .tex compiles successfully.
 - Replace placeholders like [YOUR NAME], [YOUR EMAIL], etc. with appropriate content from the experiences file.
 
-Output only the full .tex file content, ready to be compiled with pdflatex.
-Do not include explanations or extra commentary.`
+IMPORTANT: You must provide TWO outputs in the following format:
+
+1. First, provide a brief explanation paragraph (2-3 sentences) explaining:
+   - Which work experiences and projects you selected from the candidate's background
+   - How these selections align with the specific job requirements
+   - Why these experiences make the candidate a strong fit for this role
+
+2. Then, provide the complete .tex file content, ready to be compiled with pdflatex.
+
+Use this exact format:
+EXPLANATION: [Your 2-3 sentence explanation here]
+
+LATEX_CONTENT:
+[Full .tex file content here]`
 
 export async function POST(request: NextRequest) {
   try {
@@ -209,7 +221,23 @@ Resume template: ${resumeTemplate}`
 
     const result = await model.generateContent(prompt)
     const response = await result.response
-    const texContent = response.text()
+    const fullResponse = response.text()
+
+    // Parse the response to extract explanation and LaTeX content
+    let explanation = ''
+    let texContent = ''
+    
+    // Split by LATEX_CONTENT: to separate explanation from LaTeX
+    const parts = fullResponse.split('LATEX_CONTENT:')
+    if (parts.length === 2) {
+      // Extract explanation (remove "EXPLANATION: " prefix)
+      explanation = parts[0].replace('EXPLANATION:', '').trim()
+      texContent = parts[1].trim()
+    } else {
+      // Fallback: if format not followed, treat entire response as LaTeX
+      explanation = 'No explanation provided by AI'
+      texContent = fullResponse
+    }
 
     // Clean up the LaTeX output - remove markdown code blocks and extra content
     let cleanTexContent = texContent
@@ -235,6 +263,7 @@ Resume template: ${resumeTemplate}`
     const pdfBuffer = await compileLatexToPdf(cleanTexContent)
 
     return NextResponse.json({
+      explanation: explanation,
       texContent: cleanTexContent,
       pdfBuffer: Array.from(new Uint8Array(pdfBuffer))
     })
