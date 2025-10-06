@@ -165,6 +165,7 @@ Your task is to generate a .tex file that:
 - Typically include 3+ work experiences and 1-2 project experience to fill a one-page resume.
 - For each Work or Research Experience, output exactly 3 concise bullet points summarizing the most impactful, job-relevant accomplishments.
 - For each Project Experience, output exactly 2 concise bullet points.
+- Use textbf to highlight key achievements such as metrics, technologies used, and outcomes.
 - The final content must fit on a single one-page PDF (avoid redundancy, trim wordiness, prioritize relevance).
 - Where needed, add vspace using px (e.g. \\vspace{-2pt}) to ensure compactness.
 - Keep technical detail and metrics where relevant (impact, improvements, performance gains).
