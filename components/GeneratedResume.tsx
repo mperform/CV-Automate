@@ -38,9 +38,20 @@ export default function GeneratedResume({ explanation, texContent, pdfBuffer, on
   }
 
   const viewPdf = () => {
-    const blob = new Blob([pdfBuffer], { type: 'application/pdf' })
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
+    try {
+      const blob = new Blob([pdfBuffer], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      
+      // Check if the PDF is valid by checking size
+      if (blob.size < 100) {
+        alert('Warning: PDF file seems unusually small. It may not have compiled correctly.')
+      }
+      
+      window.open(url, '_blank')
+    } catch (error) {
+      console.error('Error viewing PDF:', error)
+      alert('Error opening PDF. Please try downloading it instead.')
+    }
   }
 
   return (
@@ -87,8 +98,11 @@ export default function GeneratedResume({ explanation, texContent, pdfBuffer, on
 
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="font-semibold text-gray-900 mb-2">PDF File</h3>
-          <p className="text-sm text-gray-600 mb-3">
+          <p className="text-sm text-gray-600 mb-1">
             Download the compiled PDF resume ready for applications
+          </p>
+          <p className="text-xs text-gray-500 mb-3">
+            File size: {(pdfBuffer.byteLength / 1024).toFixed(1)} KB
           </p>
           <div className="flex gap-2">
             <button
@@ -145,7 +159,8 @@ export default function GeneratedResume({ explanation, texContent, pdfBuffer, on
         <ul className="text-blue-800 text-sm space-y-1">
           <li>• Review the generated content and make any necessary adjustments</li>
           <li>• The LaTeX file allows for easy customization of formatting and content</li>
-          <li>• The PDF is ready to submit for job applications</li>
+          <li>• The PDF is compiled using online LaTeX services for convenience</li>
+          <li>• If the PDF looks incorrect, download the .tex file and compile it manually with Overleaf</li>
           <li>• Save both files for future reference and modifications</li>
         </ul>
       </div>

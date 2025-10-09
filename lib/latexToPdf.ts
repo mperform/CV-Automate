@@ -1,72 +1,203 @@
 export async function compileLatexToPdf(latexContent: string): Promise<ArrayBuffer> {
   try {
-    // Method 1: Try Overleaf API (more reliable)
-    const response = await fetch('https://www.overleaf.com/docs', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        content: latexContent
-      })
-    })
+    // Try LaTeX compilation services in order of reliability
+    console.log('Starting LaTeX compilation...')
+    
+    // Method 1: Try latex.ytotech.com (YtoTech LaTeX API)
+    try {
+      console.log('Attempting compilation with latex.ytotech.com...')
+      const pdfBuffer = await compileWithYtotech(latexContent)
+      if (pdfBuffer) {
+        console.log('✓ Successfully compiled with latex.ytotech.com')
+        return pdfBuffer
+      }
+    } catch (error) {
+      console.error('latex.ytotech.com failed:', error instanceof Error ? error.message : error)
+    }
 
-    if (response.ok) {
-      const contentType = response.headers.get('content-type')
-      
-      if (contentType && contentType.includes('application/pdf')) {
-        return await response.arrayBuffer()
+    // Method 2: Try latexonline.cc
+    try {
+      console.log('Attempting compilation with latexonline.cc...')
+      const pdfBuffer = await compileWithLatexOnlineCC(latexContent)
+      if (pdfBuffer) {
+        console.log('✓ Successfully compiled with latexonline.cc')
+        return pdfBuffer
+      }
+    } catch (error) {
+      console.error('latexonline.cc failed:', error instanceof Error ? error.message : error)
+    }
+
+    // Method 3: Try ahrefs/texlive service
+    try {
+      console.log('Attempting compilation with Ahrefs TeX service...')
+      const pdfBuffer = await compileWithAhrefs(latexContent)
+      if (pdfBuffer) {
+        console.log('✓ Successfully compiled with Ahrefs TeX service')
+        return pdfBuffer
+      }
+    } catch (error) {
+      console.error('Ahrefs TeX service failed:', error instanceof Error ? error.message : error)
+    }
+    
+  } catch (error) {
+    console.error('All LaTeX compilation services failed:', error)
+  }
+  
+  // Fallback: Create a PDF with PDFKit
+  console.log('All LaTeX services failed. Falling back to PDFKit rendering...')
+  return createPdfKitPdf(latexContent)
+}
+
+async function compileWithYtotech(latexContent: string): Promise<ArrayBuffer | null> {
+  const response = await fetch('https://latex.ytotech.com/builds/sync', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      compiler: 'pdflatex',
+      resources: [
+        {
+          file: 'main.tex',
+          content: latexContent
+        }
+      ]
+    })
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('YtoTech API error response (status', response.status + '):', errorText)
+    return null
+  }
+
+  const contentType = response.headers.get('content-type')
+  console.log('YtoTech response content-type:', contentType)
+  
+  // Check if response is PDF
+  if (contentType && contentType.includes('application/pdf')) {
+    const buffer = await response.arrayBuffer()
+    console.log('Received PDF from YtoTech, size:', buffer.byteLength)
+    return buffer
+  }
+  
+  // Check if response is JSON with PDF data
+  if (contentType && contentType.includes('application/json')) {
+    const result = await response.json()
+    console.log('YtoTech JSON response structure:', Object.keys(result))
+    
+    // Check for various possible response formats
+    if (result.pdf) {
+      // Base64 encoded PDF
+      console.log('Found base64 PDF in result.pdf')
+      return base64ToArrayBuffer(result.pdf)
+    }
+    
+    if (result.result && result.result.pdf) {
+      console.log('Found base64 PDF in result.result.pdf')
+      return base64ToArrayBuffer(result.result.pdf)
+    }
+    
+    // Check for URL to download PDF
+    if (result.url) {
+      console.log('Found PDF URL:', result.url)
+      const pdfResponse = await fetch(result.url)
+      if (pdfResponse.ok) {
+        const buffer = await pdfResponse.arrayBuffer()
+        console.log('Downloaded PDF from URL, size:', buffer.byteLength)
+        return buffer
       }
     }
 
-    throw new Error('Overleaf API failed')
-  } catch (error) {
-    console.error('Overleaf API error:', error)
-    
-    try {
-      // Method 2: Try LaTeX.Online API (backup)
-      const response = await fetch('https://latex.ytotech.com/builds/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          resources: [
-            {
-              main: true,
-              content: latexContent
-            }
-          ]
-        })
-      })
+    console.error('Unexpected JSON response format. Keys:', Object.keys(result))
+    console.error('Sample response:', JSON.stringify(result).substring(0, 500))
+  }
 
+  return null
+}
+
+async function compileWithLatexOnlineCC(latexContent: string): Promise<ArrayBuffer | null> {
+  // latexonline.cc requires the document to be available via a URL
+  // Since we can't easily do that, we'll try a POST with the content
+  
+  // Try using query parameter (some mirrors support this)
+  const encodedLatex = encodeURIComponent(latexContent)
+  
+  // This URL is too long for most servers, so this method typically won't work
+  // but we'll try it as a fallback
+  if (encodedLatex.length < 8000) { // URL length limit
+    try {
+      const response = await fetch(`https://latexonline.cc/compile?text=${encodedLatex}`)
+      
       if (response.ok) {
         const contentType = response.headers.get('content-type')
-        
         if (contentType && contentType.includes('application/pdf')) {
           return await response.arrayBuffer()
-        } else {
-          // Try parsing as JSON (for base64 encoded PDF)
-          const result = await response.json()
-          if (result.pdf) {
-            // Convert base64 to ArrayBuffer
-            const pdfBase64 = result.pdf
-            const binaryString = atob(pdfBase64)
-            const bytes = new Uint8Array(binaryString.length)
-            for (let i = 0; i < binaryString.length; i++) {
-              bytes[i] = binaryString.charCodeAt(i)
-            }
-            return bytes.buffer
-          }
         }
       }
-    } catch (latexOnlineError) {
-      console.error('LaTeX.Online API error:', latexOnlineError)
+    } catch (error) {
+      console.error('latexonline.cc GET method failed:', error)
+    }
+  }
+
+  return null
+}
+
+async function compileWithAhrefs(latexContent: string): Promise<ArrayBuffer | null> {
+  // Try the Ahrefs LaTeX compilation service
+  const response = await fetch('https://texlive2020.ahrefs.com/compile', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      code: latexContent,
+      format: 'pdf'
+    })
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const contentType = response.headers.get('content-type')
+  
+  if (contentType && contentType.includes('application/pdf')) {
+    return await response.arrayBuffer()
+  }
+  
+  if (contentType && contentType.includes('application/json')) {
+    const result = await response.json()
+    
+    if (result.pdf) {
+      return base64ToArrayBuffer(result.pdf)
     }
     
-    // Method 3: Create a proper PDF using PDFKit
-    return createPdfKitPdf(latexContent)
+    if (result.url) {
+      const pdfResponse = await fetch(result.url)
+      if (pdfResponse.ok) {
+        return await pdfResponse.arrayBuffer()
+      }
+    }
   }
+
+  return null
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  // Remove data URI prefix if present
+  const base64Clean = base64.replace(/^data:application\/pdf;base64,/, '')
+  
+  // Decode base64 to binary string
+  const binaryString = Buffer.from(base64Clean, 'base64').toString('binary')
+  
+  // Convert binary string to ArrayBuffer
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  
+  return bytes.buffer
 }
 
 async function createPdfKitPdf(latexContent: string): Promise<ArrayBuffer> {
@@ -89,29 +220,40 @@ async function createPdfKitPdf(latexContent: string): Promise<ArrayBuffer> {
     const chunks: Buffer[] = []
     doc.on('data', (chunk: Buffer) => chunks.push(chunk))
     
-    // Parse LaTeX content and add to PDF
-    const lines = latexContent.split('\n')
-    let y = 50
-    const lineHeight = 12
-    const maxY = 750
+    // Add warning header
+    doc.fontSize(14).fillColor('red').text('⚠️ LaTeX Compilation Not Available', 50, 50)
+    doc.moveDown()
     
-    // Add title
-    doc.fontSize(16).text('Generated Resume (LaTeX Source)', 50, y)
-    y += 30
+    doc.fontSize(10).fillColor('black')
+    doc.text('The LaTeX compilation services are currently unavailable.', { align: 'left' })
+    doc.text('Please download the .tex file and compile it manually using a LaTeX editor.', { align: 'left' })
+    doc.moveDown()
+    doc.text('Recommended tools:', { align: 'left' })
+    doc.text('• Overleaf (https://overleaf.com) - Online LaTeX editor', { align: 'left' })
+    doc.text('• TeXShop, TeXworks, or MiKTeX - Desktop LaTeX editors', { align: 'left' })
+    doc.moveDown()
+    doc.moveDown()
+    
+    doc.fontSize(12).fillColor('blue').text('LaTeX Source Code Preview:', { underline: true })
+    doc.moveDown()
     
     // Add LaTeX content
-    doc.fontSize(10).font('Courier')
+    doc.fontSize(9).fillColor('black').font('Courier')
+    
+    const lines = latexContent.split('\n')
+    const maxLinesPerPage = 55
+    let lineCount = 0
     
     for (const line of lines) {
-      if (y > maxY) {
+      if (lineCount >= maxLinesPerPage) {
         doc.addPage()
-        y = 50
+        lineCount = 0
       }
       
       // Truncate very long lines
-      const truncatedLine = line.length > 80 ? line.substring(0, 80) + '...' : line
-      doc.text(truncatedLine, 50, y)
-      y += lineHeight
+      const truncatedLine = line.length > 95 ? line.substring(0, 95) + '...' : line
+      doc.text(truncatedLine)
+      lineCount++
     }
     
     // Finalize the PDF

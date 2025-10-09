@@ -81,7 +81,12 @@ export default function ResumeForm({ onResumeGenerated, isGenerating, setIsGener
       }
 
       const result = await response.json()
-      onResumeGenerated(result.explanation, result.texContent, result.pdfBuffer)
+      
+      // Convert the number array back to ArrayBuffer
+      const pdfArray = new Uint8Array(result.pdfBuffer)
+      const pdfBuffer = pdfArray.buffer
+      
+      onResumeGenerated(result.explanation, result.texContent, pdfBuffer)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
